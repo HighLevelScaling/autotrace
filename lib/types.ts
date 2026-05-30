@@ -71,11 +71,65 @@ export interface VehicleReport {
   serviceRecords: {
     date: string;
     mileage: number;
-    type: 'oil_change' | 'inspection' | 'tire_rotation' | 'brake_service' | 'transmission' | 'engine_repair' | 'body_work' | 'other';
+    type:
+      | 'oil_change'
+      | 'inspection'
+      | 'tire_rotation'
+      | 'brake_service'
+      | 'transmission'
+      | 'engine_repair'
+      | 'body_work'
+      | 'other';
     description: string;
     provider: string;
     cost: number;
   }[];
+
+  previousOwners: number;
+  keysIncluded: number;
+  paintMeterReadings?: PaintMeterReading[];
+  paintworkStatus: 'original' | 'resprayed' | 'unknown';
+  smogCheck: { status: 'pass' | 'fail' | 'unknown'; date?: string };
+  runsAndDrives: boolean;
+  averageDaysOnLot: number;
+  wholesaleBook: number;
+  velocity: VelocityReport;
+}
+
+export interface PaintMeterReading {
+  panel: string;
+  reading: number;
+  unit: 'μm';
+  flagged: boolean;
+}
+
+export interface VelocityCurve {
+  label: string;
+  price: number;
+  probabilities: {
+    days7: number;
+    days14: number;
+    days30: number;
+    days60: number;
+    days90: number;
+  };
+}
+
+export interface VelocityFactor {
+  name: string;
+  impact: number;
+  direction: 'positive' | 'negative' | 'neutral';
+  description: string;
+  severity?: 'high' | 'medium' | 'low';
+}
+
+export interface VelocityReport {
+  velocityScore: number;
+  daysToSellEstimate: number;
+  liquidityTier: 'high' | 'medium' | 'low';
+  seasonalityImpact: number;
+  curves: VelocityCurve[];
+  factors: VelocityFactor[];
 }
 
 export interface BulkReport {
