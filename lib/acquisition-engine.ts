@@ -1,4 +1,20 @@
 import { VehicleReport } from './types';
+import { calculateArbitrage } from './arbitrage-engine';
+
+export interface MarketArbitrage {
+  market: string;
+  retailPremium: number;
+  daysToTurn: number;
+  transportCost: number;
+  netSpread: number;
+}
+
+export interface ArbitrageReport {
+  localMarket: MarketArbitrage;
+  bestMarket: MarketArbitrage;
+  allMarkets: MarketArbitrage[];
+  spreadDelta: number;
+}
 
 export interface AcquisitionAnalysis {
   vin: string;
@@ -29,6 +45,8 @@ export interface AcquisitionAnalysis {
   titleIssues: boolean;
   accidentHistory: boolean;
   hasTotalLoss: boolean;
+
+  arbitrage: ArbitrageReport;
 }
 
 // Configuration constants
@@ -148,6 +166,9 @@ export function analyzeAcquisition(report: VehicleReport): AcquisitionAnalysis {
   const trueNetProfit = Math.round(targetListedPrice - safeMaxBid - estimatedReconCost - floorPlanTotal - MARKETING_COST_PER_CAR);
   const netMarginPercent = safeMaxBid > 0 ? (trueNetProfit / (safeMaxBid + estimatedReconCost)) * 100 : 0;
 
+  // 8. Arbitrage Analysis
+  const arbitrage = calculateArbitrage(report);
+
   return {
     vin: report.vin,
     year: report.year,
@@ -174,6 +195,7 @@ export function analyzeAcquisition(report: VehicleReport): AcquisitionAnalysis {
     titleIssues: report.titleBrands.some(b => b !== 'clean'),
     accidentHistory: report.accidents.length > 0,
     hasTotalLoss,
+    arbitrage,
   };
 }
 

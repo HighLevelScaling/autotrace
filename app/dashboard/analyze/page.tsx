@@ -13,7 +13,7 @@ import {
   DollarSign,
   Car,
 } from 'lucide-react';
-import { AcquisitionAnalysis } from '@/lib/acquisition-engine';
+import { AcquisitionAnalysis, MarketArbitrage } from '@/lib/acquisition-engine';
 
 const ease = [0.32, 0.72, 0, 1] as const;
 
@@ -84,11 +84,14 @@ export default function AnalyzePage() {
 
   function downloadCSV() {
     if (!results) return;
-    const headers = ['VIN', 'Year', 'Make', 'Model', 'Score', 'Recommendation', 'Max Bid', 'Target List', 'Est Recon', 'Days to Sell', 'Floor Plan', 'Marketing', 'True Net Profit', 'Net Margin %', 'Risk Factors'];
+    const headers = ['VIN', 'Year', 'Make', 'Model', 'Score', 'Recommendation', 'Max Bid', 'Target List', 'Est Recon', 'Days to Sell', 'Floor Plan', 'Marketing', 'True Net Profit', 'Net Margin %', 'Local Market', 'Best Market', 'Local Spread', 'Best Spread', 'Transport Cost', 'Arbitrage Delta', 'Risk Factors'];
     const rows = results.map(r => [
       r.vin, r.year, r.make, r.model, r.acquisitionScore, r.recommendation,
       r.maxBid, r.targetListedPrice, r.estimatedReconCost, r.estimatedDaysToSell,
       r.floorPlanTotalCost, r.marketingCost, r.trueNetProfit, r.netMarginPercent + '%',
+      r.arbitrage.localMarket.market, r.arbitrage.bestMarket.market,
+      r.arbitrage.localMarket.netSpread, r.arbitrage.bestMarket.netSpread,
+      r.arbitrage.bestMarket.transportCost, r.arbitrage.spreadDelta,
       r.riskFactors.join('; '),
     ]);
     const csv = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell}"`).join(','))].join('\n');
@@ -231,6 +234,11 @@ export default function AnalyzePage() {
                     <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center hidden md:table-cell tracking-wider">Days</th>
                     <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden sm:table-cell tracking-wider">Net Profit</th>
                     <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden sm:table-cell tracking-wider">Margin</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-left hidden xl:table-cell tracking-wider">Best Market</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden xl:table-cell tracking-wider">Local Spread</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden xl:table-cell tracking-wider">Best Spread</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden xl:table-cell tracking-wider">Transport</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden xl:table-cell tracking-wider">Delta</th>
                     <th className="pb-3 pr-2 text-xs font-medium text-white/40 uppercase tracking-wider">Risks</th>
                   </tr>
                 </thead>
@@ -276,6 +284,26 @@ export default function AnalyzePage() {
                       <td className="py-3 text-right hidden sm:table-cell">
                         <span className={`text-sm ${r.netMarginPercent >= 15 ? 'text-emerald-400' : r.netMarginPercent >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
                           {r.netMarginPercent}%
+                        </span>
+                      </td>
+                      <td className="py-3 hidden xl:table-cell">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                          <span className="text-sm text-white/70">{r.arbitrage.bestMarket.market}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 text-right hidden xl:table-cell">
+                        <span className="text-sm text-white/60">${r.arbitrage.localMarket.netSpread.toLocaleString()}</span>
+                      </td>
+                      <td className="py-3 text-right hidden xl:table-cell">
+                        <span className="text-sm text-emerald-400 font-medium">${r.arbitrage.bestMarket.netSpread.toLocaleString()}</span>
+                      </td>
+                      <td className="py-3 text-right hidden xl:table-cell">
+                        <span className="text-sm text-white/40">${r.arbitrage.bestMarket.transportCost.toLocaleString()}</span>
+                      </td>
+                      <td className="py-3 text-right hidden xl:table-cell">
+                        <span className={`text-sm font-medium ${r.arbitrage.spreadDelta > 0 ? 'text-emerald-400' : 'text-white/40'}`}>
+                          {r.arbitrage.spreadDelta > 0 ? '+' : ''}${r.arbitrage.spreadDelta.toLocaleString()}
                         </span>
                       </td>
                       <td className="py-3 pr-2">
