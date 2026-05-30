@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateReport, generateBulkReports } from '@/lib/mock-engine';
+import { calculateVelocity } from '@/lib/velocity-engine';
 import { analyzeBulkAcquisitions } from '@/lib/acquisition-engine';
 import { SearchType, VehicleReport } from '@/lib/types';
 import { checkRateLimit } from '@/lib/rate-limiter';
@@ -147,6 +148,7 @@ export async function POST(req: NextRequest) {
     }
 
     const report = generateReport(type as SearchType, sanitizedValue, sanitizedState);
+    report.velocity = calculateVelocity(report);
     return NextResponse.json({ success: true, data: report, remainingCredits: creditResult.balance });
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
