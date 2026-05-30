@@ -12,6 +12,8 @@ import { TicketCard } from './ticket-card';
 import { TransferCard } from './transfer-card';
 import { AccidentCard } from './accident-card';
 import { ServiceCard } from './service-card';
+import { VelocitySection } from './velocity-section';
+import { OwnershipSection } from './ownership-section';
 
 interface ReportDashboardProps {
   report: VehicleReport;
@@ -74,9 +76,37 @@ export function ReportDashboard({ report }: ReportDashboardProps) {
         </div>
       </motion.section>
 
-      {/* Records & Registration Section */}
+      {/* Market Velocity Section */}
       <motion.section
         custom={2}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={sectionVariants}
+      >
+        <Eyebrow>Market Velocity</Eyebrow>
+        <div className="grid grid-cols-12 gap-4 sm:gap-5">
+          <VelocitySection velocity={report.velocity} marketValue={report.marketValue} />
+        </div>
+      </motion.section>
+
+      {/* Ownership Section */}
+      <motion.section
+        custom={3}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={sectionVariants}
+      >
+        <Eyebrow>Ownership &amp; Keys</Eyebrow>
+        <div className="grid grid-cols-12 gap-4 sm:gap-5">
+          <OwnershipSection report={report} />
+        </div>
+      </motion.section>
+
+      {/* Records & Registration Section */}
+      <motion.section
+        custom={4}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
@@ -91,7 +121,7 @@ export function ReportDashboard({ report }: ReportDashboardProps) {
 
       {/* History Section */}
       <motion.section
-        custom={3}
+        custom={5}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
@@ -107,7 +137,7 @@ export function ReportDashboard({ report }: ReportDashboardProps) {
 
       {/* Maintenance Section */}
       <motion.section
-        custom={4}
+        custom={6}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
