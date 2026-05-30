@@ -3,6 +3,7 @@ import { decodeVIN } from './vin-decoder';
 import { calculateConditionScore } from './condition-score';
 import { calculateVelocity } from './velocity-engine';
 import { calculateFraud } from './fraud-engine';
+import { detectPowertrain, calculateBatteryHealth } from './battery-engine';
 
 function hashString(str: string): number {
   let hash = 0;
@@ -624,7 +625,7 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
   );
 
   // Title History (for fraud detection)
-  const titleHistory = generateTitleHistory(rng, state, titleBrands, year, purchaseDate, now);
+  const titleHistory = generateTitleHistory(rng, state, titleBrands, purchaseDate, now);
 
   // Build report object
   const report: VehicleReport = {
@@ -693,8 +694,10 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
   report.conditionScore = calculateConditionScore(report);
   report.marketValue = calculateMarketValue(make, year, report.conditionScore);
   report.redFlags = generateRedFlags(report);
+  report.powertrain = detectPowertrain(make, model);
   report.velocity = calculateVelocity(report);
   report.fraud = calculateFraud(report);
+  report.battery = calculateBatteryHealth(report);
 
   return report;
 }

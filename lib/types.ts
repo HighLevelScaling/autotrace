@@ -28,6 +28,23 @@ export interface FraudReport {
   flags: string[];
 }
 
+export interface BatteryReport {
+  stateOfHealth: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+  currentRange: number;
+  projectedRange100k: number;
+  degradationRate: number;
+  chargeCycles: number;
+  warrantyMonthsRemaining: number;
+  warrantyMilesRemaining: number;
+  warrantyTransferable: boolean;
+  warrantyTransferScore: number;
+  climateImpact: 'minimal' | 'moderate' | 'severe';
+  oemDataSource: string;
+  estimatedReplacementCost: number;
+  cellBalance: 'excellent' | 'good' | 'fair' | 'poor';
+}
+
 export interface VehicleReport {
   vin: string;
   make: string;
@@ -116,6 +133,8 @@ export interface VehicleReport {
   velocity: VelocityReport;
   titleHistory: TitleHistoryEntry[];
   fraud: FraudReport;
+  powertrain: 'ice' | 'hybrid' | 'bev' | 'phev';
+  battery?: BatteryReport;
 }
 
 export interface PaintMeterReading {
