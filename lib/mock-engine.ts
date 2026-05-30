@@ -6,7 +6,7 @@ function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
   return Math.abs(hash);
@@ -54,9 +54,72 @@ class SeededRandom {
 
 const COLORS = ['Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green', 'Gold', 'Brown', 'Orange'];
 const BODY_TYPES = ['Sedan', 'SUV', 'Truck', 'Coupe', 'Hatchback', 'Wagon', 'Van', 'Convertible'];
-const STATES = ['CA', 'TX', 'FL', 'NY', 'PA', 'IL', 'OH', 'GA', 'NC', 'MI', 'NJ', 'VA', 'WA', 'AZ', 'MA', 'TN', 'IN', 'MO', 'MD', 'WI'];
-const FIRST_NAMES = ['James', 'John', 'Robert', 'Michael', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Charles', 'Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen'];
-const LAST_NAMES = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin'];
+const STATES = [
+  'CA',
+  'TX',
+  'FL',
+  'NY',
+  'PA',
+  'IL',
+  'OH',
+  'GA',
+  'NC',
+  'MI',
+  'NJ',
+  'VA',
+  'WA',
+  'AZ',
+  'MA',
+  'TN',
+  'IN',
+  'MO',
+  'MD',
+  'WI',
+];
+const FIRST_NAMES = [
+  'James',
+  'John',
+  'Robert',
+  'Michael',
+  'William',
+  'David',
+  'Richard',
+  'Joseph',
+  'Thomas',
+  'Charles',
+  'Mary',
+  'Patricia',
+  'Jennifer',
+  'Linda',
+  'Elizabeth',
+  'Barbara',
+  'Susan',
+  'Jessica',
+  'Sarah',
+  'Karen',
+];
+const LAST_NAMES = [
+  'Smith',
+  'Johnson',
+  'Williams',
+  'Brown',
+  'Jones',
+  'Garcia',
+  'Miller',
+  'Davis',
+  'Rodriguez',
+  'Martinez',
+  'Hernandez',
+  'Lopez',
+  'Gonzalez',
+  'Wilson',
+  'Anderson',
+  'Thomas',
+  'Taylor',
+  'Moore',
+  'Jackson',
+  'Martin',
+];
 
 const VIOLATIONS = [
   { desc: 'Speeding - 15mph over', amount: 250, points: 2 },
@@ -71,7 +134,23 @@ const VIOLATIONS = [
   { desc: 'Illegal U-Turn', amount: 125, points: 1 },
 ];
 
-const CITIES = ['Los Angeles, CA', 'Houston, TX', 'Miami, FL', 'New York, NY', 'Chicago, IL', 'Phoenix, AZ', 'Philadelphia, PA', 'San Antonio, TX', 'San Diego, CA', 'Dallas, TX', 'San Jose, CA', 'Austin, TX', 'Jacksonville, FL', 'Fort Worth, TX', 'Columbus, OH'];
+const CITIES = [
+  'Los Angeles, CA',
+  'Houston, TX',
+  'Miami, FL',
+  'New York, NY',
+  'Chicago, IL',
+  'Phoenix, AZ',
+  'Philadelphia, PA',
+  'San Antonio, TX',
+  'San Diego, CA',
+  'Dallas, TX',
+  'San Jose, CA',
+  'Austin, TX',
+  'Jacksonville, FL',
+  'Fort Worth, TX',
+  'Columbus, OH',
+];
 
 const SERVICE_TYPES: Array<{ type: VehicleReport['serviceRecords'][0]['type']; desc: string }> = [
   { type: 'oil_change', desc: 'Synthetic Oil Change & Filter' },
@@ -84,15 +163,42 @@ const SERVICE_TYPES: Array<{ type: VehicleReport['serviceRecords'][0]['type']; d
   { type: 'other', desc: 'General Maintenance' },
 ];
 
-const SERVICE_SHOPS = ['Jiffy Lube', 'Firestone Complete Auto Care', 'Midas', 'Pep Boys', 'Valvoline Instant Oil Change', 'Goodyear Auto Service', 'NTB Tire & Service', 'Meineke Car Care', 'Dealership Service Center', 'Independent Garage'];
+const SERVICE_SHOPS = [
+  'Jiffy Lube',
+  'Firestone Complete Auto Care',
+  'Midas',
+  'Pep Boys',
+  'Valvoline Instant Oil Change',
+  'Goodyear Auto Service',
+  'NTB Tire & Service',
+  'Meineke Car Care',
+  'Dealership Service Center',
+  'Independent Garage',
+];
 
 // Base market values by make (mid-range model, current year)
 const BASE_VALUES: Record<string, number> = {
-  'Honda': 28500, 'Ford': 32000, 'Chevrolet': 31000, 'Jeep': 34000, 'Chrysler': 28000,
-  'Toyota': 30000, 'Kia': 26000, 'Hyundai': 27000, 'Subaru': 29000, 'Mitsubishi': 24000,
-  'BMW': 52000, 'Mercedes-Benz': 58000, 'Volkswagen': 28000, 'Audi': 48000,
-  'Land Rover': 65000, 'Jaguar': 55000, 'Maserati': 78000, 'Fiat': 22000,
-  'Ferrari': 280000, 'Volvo': 42000, 'Unknown': 25000,
+  Honda: 28500,
+  Ford: 32000,
+  Chevrolet: 31000,
+  Jeep: 34000,
+  Chrysler: 28000,
+  Toyota: 30000,
+  Kia: 26000,
+  Hyundai: 27000,
+  Subaru: 29000,
+  Mitsubishi: 24000,
+  BMW: 52000,
+  'Mercedes-Benz': 58000,
+  Volkswagen: 28000,
+  Audi: 48000,
+  'Land Rover': 65000,
+  Jaguar: 55000,
+  Maserati: 78000,
+  Fiat: 22000,
+  Ferrari: 280000,
+  Volvo: 42000,
+  Unknown: 25000,
 };
 
 function formatDate(d: Date): string {
@@ -115,7 +221,23 @@ function generateDL(rng: SeededRandom): string {
 }
 
 function generateVIN(rng: SeededRandom, seed: number): string {
-  const wmis = ['1HG', '1FA', '1FT', '1G1', '1GC', '1J4', '1C4', '2T1', '2F2', '5XY', 'JHM', 'JT2', 'JF1', 'WBA', 'WVW'];
+  const wmis = [
+    '1HG',
+    '1FA',
+    '1FT',
+    '1G1',
+    '1GC',
+    '1J4',
+    '1C4',
+    '2T1',
+    '2F2',
+    '5XY',
+    'JHM',
+    'JT2',
+    'JF1',
+    'WBA',
+    'WVW',
+  ];
   const wmi = wmis[seed % wmis.length];
   const chars = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
   let vin = wmi;
@@ -125,27 +247,31 @@ function generateVIN(rng: SeededRandom, seed: number): string {
 
 function generateTitleBrands(rng: SeededRandom, hasAccidents: boolean, hasTotalLoss: boolean): TitleBrand[] {
   const brands: TitleBrand[] = ['clean'];
-  
+
   if (hasTotalLoss && rng.chance(0.7)) brands.push('salvage');
   if (brands.includes('salvage') && rng.chance(0.5)) brands.push('rebuilt');
   if (rng.chance(0.05)) brands.push('flood');
   if (rng.chance(0.03)) brands.push('lemon');
   if (rng.chance(0.04)) brands.push('theft');
   if (rng.chance(0.08)) brands.push('odometer_rollback');
-  
+
   // Remove clean if any bad brands exist
   if (brands.length > 1) {
-    return brands.filter(b => b !== 'clean');
+    return brands.filter((b) => b !== 'clean');
   }
   return brands;
 }
 
-function calculateMarketValue(make: string, year: number, conditionScore: number): { low: number; mid: number; high: number } {
+function calculateMarketValue(
+  make: string,
+  year: number,
+  conditionScore: number
+): { low: number; mid: number; high: number } {
   const base = BASE_VALUES[make] || 25000;
   const age = new Date().getFullYear() - year;
   const depreciation = Math.pow(0.88, age); // 12% annual depreciation
   const adjusted = base * depreciation * (conditionScore / 100);
-  
+
   return {
     low: Math.round(adjusted * 0.85),
     mid: Math.round(adjusted),
@@ -155,19 +281,19 @@ function calculateMarketValue(make: string, year: number, conditionScore: number
 
 function generateRedFlags(report: VehicleReport): string[] {
   const flags: string[] = [];
-  
+
   if (report.titleBrands.includes('salvage')) flags.push('Salvage title on record');
   if (report.titleBrands.includes('flood')) flags.push('Flood damage reported');
   if (report.titleBrands.includes('lemon')) flags.push('Manufacturer buyback (lemon)');
   if (report.titleBrands.includes('odometer_rollback')) flags.push('Odometer rollback suspected');
   if (report.titleBrands.includes('theft')) flags.push('Prior theft recovery');
-  if (report.accidents.some(a => a.severity === 'total-loss')) flags.push('Total loss declared');
-  if (report.tickets.filter(t => t.status === 'unpaid').length >= 3) flags.push('Multiple unpaid citations');
+  if (report.accidents.some((a) => a.severity === 'total-loss')) flags.push('Total loss declared');
+  if (report.tickets.filter((t) => t.status === 'unpaid').length >= 3) flags.push('Multiple unpaid citations');
   if (report.dmvValidation.status === 'suspended') flags.push('Suspended driver license');
   if (report.registration.status === 'suspended') flags.push('Suspended registration');
   if (report.transfers.length > 4) flags.push('Excessive ownership changes');
   if (report.serviceRecords.length < 3) flags.push('Minimal service history');
-  
+
   return flags;
 }
 
@@ -186,7 +312,13 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
   if (type === 'vin') {
     vin = value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '');
     if (vin.length < 10) {
-      vin = '1HGC' + value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, '').padEnd(13, '0').slice(0, 13);
+      vin =
+        '1HGC' +
+        value
+          .toUpperCase()
+          .replace(/[^A-HJ-NPR-Z0-9]/g, '')
+          .padEnd(13, '0')
+          .slice(0, 13);
     }
     const decoded = decodeVIN(vin);
     make = decoded.make;
@@ -222,24 +354,36 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
 
   // Accidents (generate BEFORE title brands)
   const accidentCount = rng.pickWeighted([
-    { item: 0, weight: 45 }, { item: 1, weight: 35 }, { item: 2, weight: 15 }, { item: 3, weight: 5 },
+    { item: 0, weight: 45 },
+    { item: 1, weight: 35 },
+    { item: 2, weight: 15 },
+    { item: 3, weight: 5 },
   ]);
   const accidents: VehicleReport['accidents'] = [];
   const accidentDescriptions = [
-    'Rear-end collision at intersection', 'Side impact in parking lot', 'Frontal collision on highway',
-    'Hit stationary object', 'Multi-vehicle pileup', 'Sideswipe on freeway', 'Backing collision', 'Weather-related skid into ditch',
+    'Rear-end collision at intersection',
+    'Side impact in parking lot',
+    'Frontal collision on highway',
+    'Hit stationary object',
+    'Multi-vehicle pileup',
+    'Sideswipe on freeway',
+    'Backing collision',
+    'Weather-related skid into ditch',
   ];
   let hasTotalLoss = false;
   for (let i = 0; i < accidentCount; i++) {
     const accidentDate = rng.dateBetween(purchaseDate, now);
     const severity = rng.pickWeighted([
-      { item: 'minor' as const, weight: 40 }, { item: 'moderate' as const, weight: 35 },
-      { item: 'major' as const, weight: 20 }, { item: 'total-loss' as const, weight: 5 },
+      { item: 'minor' as const, weight: 40 },
+      { item: 'moderate' as const, weight: 35 },
+      { item: 'major' as const, weight: 20 },
+      { item: 'total-loss' as const, weight: 5 },
     ]);
     if (severity === 'total-loss') hasTotalLoss = true;
     const damageMap = { minor: 1500, moderate: 7500, major: 25000, 'total-loss': 45000 };
     accidents.push({
-      date: formatDate(accidentDate), severity,
+      date: formatDate(accidentDate),
+      severity,
       description: rng.pick(accidentDescriptions),
       damageEstimate: damageMap[severity] + rng.nextInt(-500, 2000),
       airbagDeployed: severity !== 'minor' && rng.next() > 0.3,
@@ -254,32 +398,56 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
   const titleBrands = generateTitleBrands(rng, accidentCount > 0, hasTotalLoss);
 
   // DMV
-  const dmvStatus = rng.pickWeighted([{ item: 'valid' as const, weight: 75 }, { item: 'suspended' as const, weight: 15 }, { item: 'invalid' as const, weight: 10 }]);
+  const dmvStatus = rng.pickWeighted([
+    { item: 'valid' as const, weight: 75 },
+    { item: 'suspended' as const, weight: 15 },
+    { item: 'invalid' as const, weight: 10 },
+  ]);
   const dmvExpiry = new Date(now.getFullYear() + rng.nextInt(1, 5), rng.nextInt(0, 11), rng.nextInt(1, 28));
-  const restrictions = dmvStatus === 'valid' && rng.next() > 0.7
-    ? rng.pick([['Corrective Lenses'], ['Daylight Driving Only'], ['Automatic Transmission'], ['Corrective Lenses', 'No Interstate']])
-    : [];
+  const restrictions =
+    dmvStatus === 'valid' && rng.next() > 0.7
+      ? rng.pick([
+          ['Corrective Lenses'],
+          ['Daylight Driving Only'],
+          ['Automatic Transmission'],
+          ['Corrective Lenses', 'No Interstate'],
+        ])
+      : [];
 
   // Registration
-  const regStatus = rng.pickWeighted([{ item: 'active' as const, weight: 80 }, { item: 'expired' as const, weight: 15 }, { item: 'suspended' as const, weight: 5 }]);
+  const regStatus = rng.pickWeighted([
+    { item: 'active' as const, weight: 80 },
+    { item: 'expired' as const, weight: 15 },
+    { item: 'suspended' as const, weight: 5 },
+  ]);
   const regIssue = new Date(now.getFullYear() - rng.nextInt(0, 3), rng.nextInt(0, 11), rng.nextInt(1, 28));
   const regExpiry = new Date(regIssue.getFullYear() + 1, regIssue.getMonth(), regIssue.getDate());
   const regRenewed = new Date(regIssue.getFullYear(), regIssue.getMonth() + 10, regIssue.getDate());
 
   // Tickets
   const ticketCount = rng.pickWeighted([
-    { item: 0, weight: 30 }, { item: 1, weight: 25 }, { item: 2, weight: 20 },
-    { item: 3, weight: 12 }, { item: 4, weight: 8 }, { item: 5, weight: 5 },
+    { item: 0, weight: 30 },
+    { item: 1, weight: 25 },
+    { item: 2, weight: 20 },
+    { item: 3, weight: 12 },
+    { item: 4, weight: 8 },
+    { item: 5, weight: 5 },
   ]);
   const tickets: VehicleReport['tickets'] = [];
   for (let i = 0; i < ticketCount; i++) {
     const violation = rng.pick(VIOLATIONS);
     const ticketDate = rng.dateBetween(purchaseDate, now);
     tickets.push({
-      id: `TKT-${rng.nextInt(100000, 999999)}`, date: formatDate(ticketDate),
-      violation: violation.desc, location: rng.pick(CITIES),
+      id: `TKT-${rng.nextInt(100000, 999999)}`,
+      date: formatDate(ticketDate),
+      violation: violation.desc,
+      location: rng.pick(CITIES),
       amount: violation.amount + rng.nextInt(-20, 20),
-      status: rng.pickWeighted([{ item: 'paid' as const, weight: 70 }, { item: 'unpaid' as const, weight: 20 }, { item: 'disputed' as const, weight: 10 }]),
+      status: rng.pickWeighted([
+        { item: 'paid' as const, weight: 70 },
+        { item: 'unpaid' as const, weight: 20 },
+        { item: 'disputed' as const, weight: 10 },
+      ]),
       points: violation.points,
     });
   }
@@ -292,9 +460,18 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
   for (let i = 0; i < transferCount; i++) {
     const transferDate = i === 0 ? purchaseDate : rng.dateBetween(new Date(transfers[i - 1].date), now);
     const fromName = i === 0 ? 'Dealer' : `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
-    const toName = i === transferCount - 1 ? `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}` : `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
+    const toName =
+      i === transferCount - 1
+        ? `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`
+        : `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`;
     currentMileage += rng.nextInt(15000, 60000);
-    transfers.push({ date: formatDate(transferDate), from: fromName, to: toName, type: i === 0 ? 'dealer' : rng.pick(['sale', 'gift', 'inheritance']), mileage: currentMileage });
+    transfers.push({
+      date: formatDate(transferDate),
+      from: fromName,
+      to: toName,
+      type: i === 0 ? 'dealer' : rng.pick(['sale', 'gift', 'inheritance']),
+      mileage: currentMileage,
+    });
   }
 
   // Service Records
@@ -302,32 +479,129 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
   const serviceRecords: VehicleReport['serviceRecords'] = [];
   let serviceMileage = rng.nextInt(3000, 8000);
   for (let i = 0; i < serviceCount; i++) {
-    const serviceDate = i === 0
-      ? new Date(purchaseDate.getFullYear(), purchaseDate.getMonth() + 3, purchaseDate.getDate())
-      : rng.dateBetween(new Date(serviceRecords[i - 1].date), new Date(Math.min(now.getTime(), new Date(serviceRecords[i - 1].date).getTime() + 180 * 86400000)));
+    const serviceDate =
+      i === 0
+        ? new Date(purchaseDate.getFullYear(), purchaseDate.getMonth() + 3, purchaseDate.getDate())
+        : rng.dateBetween(
+            new Date(serviceRecords[i - 1].date),
+            new Date(Math.min(now.getTime(), new Date(serviceRecords[i - 1].date).getTime() + 180 * 86400000))
+          );
     if (serviceDate > now) break;
     const svc = rng.pick(SERVICE_TYPES);
     serviceMileage += rng.nextInt(3000, 8000);
-    const costMap: Record<string, number> = { oil_change: 65, inspection: 45, tire_rotation: 55, brake_service: 350, transmission: 450, engine_repair: 1200, body_work: 2200, other: 150 };
-    serviceRecords.push({ date: formatDate(serviceDate), mileage: serviceMileage, type: svc.type, description: svc.desc, provider: rng.pick(SERVICE_SHOPS), cost: costMap[svc.type] + rng.nextInt(-15, 50) });
+    const costMap: Record<string, number> = {
+      oil_change: 65,
+      inspection: 45,
+      tire_rotation: 55,
+      brake_service: 350,
+      transmission: 450,
+      engine_repair: 1200,
+      body_work: 2200,
+      other: 150,
+    };
+    serviceRecords.push({
+      date: formatDate(serviceDate),
+      mileage: serviceMileage,
+      type: svc.type,
+      description: svc.desc,
+      provider: rng.pick(SERVICE_SHOPS),
+      cost: costMap[svc.type] + rng.nextInt(-15, 50),
+    });
   }
+
+  // Ownership & mechanical metadata
+  const previousOwners = rng.nextInt(1, 5);
+  const keysIncluded = rng.pickWeighted([
+    { item: 1, weight: 25 },
+    { item: 2, weight: 55 },
+    { item: 3, weight: 20 },
+  ]);
+  const paintworkStatus = rng.pickWeighted([
+    { item: 'original' as const, weight: 60 },
+    { item: 'resprayed' as const, weight: 25 },
+    { item: 'unknown' as const, weight: 15 },
+  ]);
+  const smogStatus = rng.pickWeighted([
+    { item: 'pass' as const, weight: 75 },
+    { item: 'fail' as const, weight: 15 },
+    { item: 'unknown' as const, weight: 10 },
+  ]);
+  const runsAndDrives = rng.chance(0.85);
+
+  // Paint meter readings
+  const PANELS = [
+    'Hood',
+    'Front Left Fender',
+    'Front Right Fender',
+    'Driver Door',
+    'Passenger Door',
+    'Trunk Lid',
+    'Roof',
+    'Rear Bumper',
+    'Front Bumper',
+  ];
+  const paintMeterReadings = PANELS.map((panel) => {
+    const reading = rng.nextInt(80, 180);
+    return { panel, reading, unit: 'μm' as const, flagged: reading > 150 };
+  });
+
+  const averageDaysOnLot = rng.nextInt(18, 45);
+  const wholesaleBook = Math.round(
+    (BASE_VALUES[make] || 25000) * Math.pow(0.88, new Date().getFullYear() - year) * (0.65 + rng.next() * 0.17)
+  );
 
   // Build report object
   const report: VehicleReport = {
-    vin, make, model, year, color, bodyType,
+    vin,
+    make,
+    model,
+    year,
+    color,
+    bodyType,
     conditionScore: 0, // placeholder, calculated below
     titleBrands,
     marketValue: { low: 0, mid: 0, high: 0 }, // placeholder
     redFlags: [], // placeholder
+    previousOwners,
+    keysIncluded,
+    paintworkStatus,
+    smogCheck: {
+      status: smogStatus,
+      date:
+        smogStatus !== 'unknown' ? formatDate(rng.dateBetween(new Date(now.getFullYear() - 1, 0, 1), now)) : undefined,
+    },
+    runsAndDrives,
+    paintMeterReadings: paintMeterReadings.slice(0, rng.nextInt(5, 9)),
+    averageDaysOnLot,
+    wholesaleBook,
+    velocity: {
+      velocityScore: 0,
+      daysToSellEstimate: 0,
+      liquidityTier: 'medium',
+      seasonalityImpact: 0,
+      curves: [],
+      factors: [],
+    },
     dmvValidation: {
-      status: dmvStatus, validatedAt: formatDate(rng.dateBetween(new Date(now.getFullYear() - 1, 0, 1), now)),
-      state, licenseNumber: dlNumber, expiryDate: formatDate(dmvExpiry), restrictions,
+      status: dmvStatus,
+      validatedAt: formatDate(rng.dateBetween(new Date(now.getFullYear() - 1, 0, 1), now)),
+      state,
+      licenseNumber: dlNumber,
+      expiryDate: formatDate(dmvExpiry),
+      restrictions,
     },
     registration: {
-      status: regStatus, plateNumber, state,
-      issueDate: formatDate(regIssue), expiryDate: formatDate(regExpiry), lastRenewed: formatDate(regRenewed),
+      status: regStatus,
+      plateNumber,
+      state,
+      issueDate: formatDate(regIssue),
+      expiryDate: formatDate(regExpiry),
+      lastRenewed: formatDate(regRenewed),
     },
-    tickets, transfers, accidents, serviceRecords,
+    tickets,
+    transfers,
+    accidents,
+    serviceRecords,
   };
 
   // Calculate derived fields
@@ -339,7 +613,7 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
 }
 
 export function generateBulkReports(vins: string[]): BulkReport[] {
-  return vins.map(vin => {
+  return vins.map((vin) => {
     try {
       const report = generateReport('vin', vin);
       return {
@@ -359,9 +633,16 @@ export function generateBulkReports(vins: string[]): BulkReport[] {
     } catch {
       return {
         vin,
-        make: '', model: '', year: 0, conditionScore: 0,
-        titleBrands: [], redFlags: [], marketValueMid: 0,
-        accidentCount: 0, ticketCount: 0, registrationStatus: '',
+        make: '',
+        model: '',
+        year: 0,
+        conditionScore: 0,
+        titleBrands: [],
+        redFlags: [],
+        marketValueMid: 0,
+        accidentCount: 0,
+        ticketCount: 0,
+        registrationStatus: '',
         status: 'error',
         error: 'Failed to generate report',
       };
