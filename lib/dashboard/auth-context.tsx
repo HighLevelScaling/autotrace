@@ -5,15 +5,15 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (password: string) => boolean;
-  logout: () => void;
+  login: (password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
-  login: () => false,
-  logout: () => {},
+  login: async () => false,
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -21,25 +21,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const auth = localStorage.getItem('autotrace_auth');
-    if (auth === 'true') {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
+    fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then((res) => res.json())
+      .then((data) => setIsAuthenticated(data.isAuthenticated))
+      .catch(() => setIsAuthenticated(false))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  function login(password: string): boolean {
-    if (password === 'demo') {
-      localStorage.setItem('autotrace_auth', 'true');
-      setIsAuthenticated(true);
-      return true;
+  async function login(password: string): Promise<boolean> {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+        credentials: 'same-origin',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
-    return false;
   }
 
-  function logout() {
-    localStorage.removeItem('autotrace_auth');
-    setIsAuthenticated(false);
+  async function logout(): Promise<void> {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      });
+    } finally {
+      setIsAuthenticated(false);
+    }
   }
 
   return (

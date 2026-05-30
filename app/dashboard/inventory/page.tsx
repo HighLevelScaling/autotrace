@@ -11,9 +11,11 @@ import {
   Clock,
   DollarSign,
   TrendingDown,
+  Plus,
 } from 'lucide-react';
 import { useInventory } from '@/lib/dashboard/inventory-context';
 
+const ease = [0.32, 0.72, 0, 1] as const;
 const FLOOR_PLAN_DAILY_RATE = 18;
 
 function getDaysOnLot(dateAcquired: string): number {
@@ -67,22 +69,25 @@ export default function InventoryPage() {
   });
 
   return (
-    <div>
+    <div className="py-8 md:py-12">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
+        transition={{ duration: 0.8, ease }}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Inventory</h1>
-            <p className="text-sm text-white/40 mt-1">{filtered.length} vehicle{filtered.length !== 1 ? 's' : ''}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Inventory</h1>
+            <p className="text-sm text-white/40 mt-2">{filtered.length} vehicle{filtered.length !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={() => router.push('/dashboard/add')}
-            className="inline-flex items-center gap-2 bg-white text-black px-4 py-2.5 rounded-xl font-medium text-sm hover:bg-white/90 active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2 bg-white text-black pl-4 pr-5 py-2.5 rounded-full font-medium text-sm hover:bg-white/90 active:scale-[0.98] transition-all"
+            style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '600ms' }}
           >
-            <Car className="w-4 h-4" />
+            <span className="w-6 h-6 rounded-full bg-black/10 flex items-center justify-center">
+              <Plus className="w-3.5 h-3.5" strokeWidth={1} />
+            </span>
             Add Vehicle
           </button>
         </div>
@@ -93,11 +98,11 @@ export default function InventoryPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1], delay: 0.05 }}
-          className="mb-6 p-1.5 rounded-[2rem] glass-card"
+          transition={{ duration: 0.7, ease, delay: 0.05 }}
+          className="mb-6 p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl"
         >
           <div className="rounded-[calc(2rem-0.375rem)] bg-amber-500/5 border border-amber-500/10 p-4 flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" strokeWidth={1} />
             <div>
               <p className="text-sm font-medium text-amber-400">{agingVehicles.length} vehicle{agingVehicles.length !== 1 ? 's' : ''} aging on lot</p>
               <p className="text-xs text-amber-400/60">Review inventory for price drops or wholesale decisions</p>
@@ -110,18 +115,19 @@ export default function InventoryPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1], delay: 0.1 }}
+        transition={{ duration: 0.7, ease, delay: 0.1 }}
         className="mb-6 space-y-3"
       >
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" strokeWidth={1} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by VIN, make, model, or year..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 transition-colors"
+              style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}
             />
           </div>
         </div>
@@ -130,11 +136,12 @@ export default function InventoryPage() {
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-all ${
                 statusFilter === status
                   ? 'bg-white/10 text-white border border-white/10'
                   : 'bg-white/5 text-white/40 border border-transparent hover:bg-white/[0.07]'
               }`}
+              style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}
             >
               {status === 'all' ? 'All Statuses' : status}
             </button>
@@ -157,32 +164,32 @@ export default function InventoryPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1], delay: 0.2 }}
+        transition={{ duration: 0.7, ease, delay: 0.2 }}
       >
         {filtered.length === 0 ? (
-          <div className="p-1.5 rounded-[2rem] glass-card">
-            <div className="rounded-[calc(2rem-0.375rem)] glass-card-inner p-8 text-center">
-              <Car className="w-10 h-10 text-white/20 mx-auto mb-3" strokeWidth={1.5} />
+          <div className="p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl">
+            <div className="rounded-[calc(2rem-0.375rem)] bg-[#0a0a0a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] p-8 text-center">
+              <Car className="w-10 h-10 text-white/20 mx-auto mb-3" strokeWidth={1} />
               <p className="text-white/40 text-sm">No vehicles match your filters</p>
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-[1.5rem] glass-card">
-            <div className="rounded-[calc(1.5rem-0.375rem)] glass-card-inner p-4">
+          <div className="p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl">
+            <div className="rounded-[calc(2rem-0.375rem)] bg-[#0a0a0a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] p-4 overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-white/5">
-                    <th className="pb-3 pl-2 text-xs font-medium text-white/40 uppercase">Vehicle</th>
-                    <th className="pb-3 text-xs font-medium text-white/40 uppercase">Score</th>
-                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center hidden md:table-cell">
-                      <Clock className="w-3 h-3 inline" /> Days
+                    <th className="pb-3 pl-2 text-xs font-medium text-white/40 uppercase tracking-wider">Vehicle</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase tracking-wider">Score</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center hidden md:table-cell tracking-wider">
+                      <Clock className="w-3 h-3 inline" strokeWidth={1} /> Days
                     </th>
-                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden lg:table-cell">Inv. Cost</th>
-                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden lg:table-cell">Listed</th>
-                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden sm:table-cell">Est. Profit</th>
-                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center">Status</th>
-                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center hidden xl:table-cell">Floor Plan</th>
-                    <th className="pb-3 pr-2 text-xs font-medium text-white/40 uppercase"></th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden lg:table-cell tracking-wider">Inv. Cost</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden lg:table-cell tracking-wider">Listed</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden sm:table-cell tracking-wider">Est. Profit</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center tracking-wider">Status</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center hidden xl:table-cell tracking-wider">Floor Plan</th>
+                    <th className="pb-3 pr-2 text-xs font-medium text-white/40 uppercase tracking-wider"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.03]">
@@ -200,10 +207,11 @@ export default function InventoryPage() {
                         key={v.vin}
                         onClick={() => router.push(`/dashboard/vehicle/${encodeURIComponent(v.vin)}`)}
                         className="group hover:bg-white/[0.02] transition-colors cursor-pointer"
+                        style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}
                       >
                         <td className="py-3 pl-2">
                           <div className="flex items-center gap-2">
-                            <Car className="w-4 h-4 text-white/20 flex-shrink-0" />
+                            <Car className="w-4 h-4 text-white/20 flex-shrink-0" strokeWidth={1} />
                             <div>
                               <p className="text-sm text-white/80">{v.year} {v.make} {v.model}</p>
                               <p className="text-[10px] text-white/30 font-mono">{v.vin}</p>
@@ -213,13 +221,13 @@ export default function InventoryPage() {
                                   alert.level === 'urgent' ? 'text-orange-400' :
                                   'text-amber-400'
                                 }`}>
-                                  <AlertTriangle className="w-3 h-3" />
+                                  <AlertTriangle className="w-3 h-3" strokeWidth={1} />
                                   {alert.message}
                                 </span>
                               )}
                               {priceDrop > 0 && alert.level !== 'critical' && (
                                 <span className="inline-flex items-center gap-1 text-[10px] text-blue-400/70 mt-0.5">
-                                  <TrendingDown className="w-3 h-3" />
+                                  <TrendingDown className="w-3 h-3" strokeWidth={1} />
                                   Drop ${priceDrop.toLocaleString()}
                                 </span>
                               )}
@@ -267,7 +275,7 @@ export default function InventoryPage() {
                         </td>
                         <td className="py-3 text-center hidden xl:table-cell">
                           <div className="flex items-center justify-center gap-1">
-                            <DollarSign className="w-3 h-3 text-white/20" />
+                            <DollarSign className="w-3 h-3 text-white/20" strokeWidth={1} />
                             <span className="text-xs text-white/40">${floorPlanCost.toLocaleString()}</span>
                           </div>
                         </td>
@@ -280,8 +288,9 @@ export default function InventoryPage() {
                               }
                             }}
                             className="opacity-0 group-hover:opacity-100 text-white/20 hover:text-red-400 transition-all"
+                            style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" strokeWidth={1} />
                           </button>
                         </td>
                       </tr>

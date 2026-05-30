@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { FluidIslandNav } from "@/components/fluid-island-nav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +28,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-[#050505] text-white">{children}</body>
+      <body className="min-h-[100dvh] bg-[#050505] text-white antialiased overflow-x-hidden">
+        <div className="noise-overlay" aria-hidden="true" />
+        <FluidIslandNav />
+        {children}
+      </body>
     </html>
   );
 }

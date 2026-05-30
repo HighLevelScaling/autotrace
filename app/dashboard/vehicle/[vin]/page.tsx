@@ -5,10 +5,6 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Car,
-  DollarSign,
-  Wrench,
-  Tag,
-  Calendar,
   Edit3,
   Printer,
   AlertTriangle,
@@ -21,8 +17,61 @@ import {
   Minus,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useInventory } from '@/lib/dashboard/inventory-context';
+import { useInventory, InventoryVehicle } from '@/lib/dashboard/inventory-context';
 import { ConditionScoreBadge } from '@/components/condition-score-badge';
+
+const ease = [0.32, 0.72, 0, 1] as const;
+
+interface Competitor {
+  id: number;
+  dealer: string;
+  price: number;
+  daysListed: number;
+  distance: number;
+  isNewer: boolean;
+}
+
+interface MarketData {
+  competitors: Competitor[];
+  avgPrice: number;
+  avgDays: number;
+  competitorCount: number;
+  ourPosition: 'below' | 'at' | 'above';
+  priceTrend: 'rising' | 'falling' | 'stable';
+}
+
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed * 9301 + 49297) * 49297;
+  return x - Math.floor(x);
+}
+
+function generateCompetitorData(vin: string, basePrice: number, listedPrice: number): MarketData {
+  const seedBase = vin.split('').reduce((sum, ch, i) => sum + ch.charCodeAt(0) * (i + 1), 0);
+  const competitorCount = 3 + Math.floor(seededRandom(seedBase) * 8);
+  const competitors: Competitor[] = [];
+
+  for (let i = 0; i < competitorCount; i++) {
+    const priceVariance = (seededRandom(seedBase + i * 7) - 0.5) * 0.15;
+    const daysListed = 5 + Math.floor(seededRandom(seedBase + i * 13) * 75);
+    const distance = 2 + Math.floor(seededRandom(seedBase + i * 19) * 48);
+    competitors.push({
+      id: i,
+      dealer: ['Premier Auto', 'City Motors', 'Highway Sales', 'Diamond Cars', 'Elite Autos', 'Star Dealer', 'Metro Cars'][i % 7],
+      price: Math.round(basePrice * (1 + priceVariance)),
+      daysListed,
+      distance,
+      isNewer: daysListed < 14,
+    });
+  }
+  competitors.sort((a, b) => a.price - b.price);
+
+  const avgPrice = Math.round(competitors.reduce((s, c) => s + c.price, 0) / competitors.length);
+  const avgDays = Math.round(competitors.reduce((s, c) => s + c.daysListed, 0) / competitors.length);
+  const ourPosition = listedPrice > avgPrice ? 'above' : listedPrice < avgPrice * 0.95 ? 'below' : 'at';
+  const priceTrend = competitorCount > 5 ? 'falling' : competitorCount < 3 ? 'rising' : 'stable';
+
+  return { competitors: competitors.slice(0, 5), avgPrice, avgDays, competitorCount, ourPosition, priceTrend };
+}
 
 export default function VehicleDetailPage() {
   const params = useParams();
@@ -33,23 +82,23 @@ export default function VehicleDetailPage() {
   const vin = decodeURIComponent(params.vin as string);
   const vehicle = vehicles.find(v => v.vin === vin);
 
-  // Edit form state
   const [editPurchase, setEditPurchase] = useState('');
-  const [EditRecon, setEditRecon] = useState('');
+  const [editRecon, setEditRecon] = useState('');
   const [editListed, setEditListed] = useState('');
   const [editStatus, setEditStatus] = useState('');
   const [editNotes, setEditNotes] = useState('');
 
   if (!vehicle) {
     return (
-      <div className="text-center py-20">
-        <Car className="w-12 h-12 text-white/20 mx-auto mb-4" />
+      <div className="text-center py-24">
+        <Car className="w-12 h-12 text-white/20 mx-auto mb-4" strokeWidth={1} />
         <p className="text-white/40">Vehicle not found in inventory</p>
         <button
           onClick={() => router.push('/dashboard/inventory')}
-          className="mt-4 inline-flex items-center gap-2 bg-white text-black px-5 py-2.5 rounded-xl text-sm font-medium"
+          className="mt-6 inline-flex items-center gap-2 bg-white text-black pl-4 pr-5 py-2.5 rounded-full text-sm font-medium hover:bg-white/90 active:scale-[0.98] transition-all"
+          style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '600ms' }}
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4" strokeWidth={1} />
           Back to Inventory
         </button>
       </div>
@@ -59,38 +108,8 @@ export default function VehicleDetailPage() {
   const investment = vehicle.purchasePrice + vehicle.reconditioningCost;
   const listed = vehicle.listedPrice || vehicle.marketValueMid;
   const profit = listed - investment;
-  const margin = investment > 0 ? (profit / investment) * 100 : 0;
 
-  // Mock competitive market data
-  function generateCompetitorData() {
-    if (!vehicle) return { competitors: [] as any[], avgPrice: 0, avgDays: 0, competitorCount: 0, ourPosition: 'at' as const, priceTrend: 'stable' as const };
-    const basePrice = vehicle.marketValueMid;
-    const competitorCount = 3 + Math.floor(Math.abs(vehicle.vin.charCodeAt(0) + vehicle.vin.charCodeAt(5)) % 8);
-    const competitors = [];
-    for (let i = 0; i < competitorCount; i++) {
-      const priceVariance = (Math.random() - 0.5) * 0.15;
-      const daysListed = 5 + Math.floor(Math.random() * 75);
-      const distance = 2 + Math.floor(Math.random() * 48);
-      competitors.push({
-        id: i,
-        dealer: ['Premier Auto', 'City Motors', 'Highway Sales', 'Diamond Cars', 'Elite Autos', 'Star Dealer', 'Metro Cars'][i % 7],
-        price: Math.round(basePrice * (1 + priceVariance)),
-        daysListed,
-        distance,
-        isNewer: daysListed < 14,
-      });
-    }
-    competitors.sort((a, b) => a.price - b.price);
-
-    const avgPrice = Math.round(competitors.reduce((s, c) => s + c.price, 0) / competitors.length);
-    const avgDays = Math.round(competitors.reduce((s, c) => s + c.daysListed, 0) / competitors.length);
-    const ourPosition = listed > avgPrice ? 'above' : listed < avgPrice * 0.95 ? 'below' : 'at';
-    const priceTrend = competitorCount > 5 ? 'falling' : competitorCount < 3 ? 'rising' : 'stable';
-
-    return { competitors: competitors.slice(0, 5), avgPrice, avgDays, competitorCount, ourPosition, priceTrend };
-  }
-
-  const marketData = generateCompetitorData();
+  const marketData = generateCompetitorData(vehicle.vin, vehicle.marketValueMid, listed);
 
   function startEdit() {
     if (!vehicle) return;
@@ -106,28 +125,29 @@ export default function VehicleDetailPage() {
     if (!vehicle) return;
     updateVehicle(vehicle.vin, {
       purchasePrice: Number(editPurchase) || 0,
-      reconditioningCost: Number(EditRecon) || 0,
+      reconditioningCost: Number(editRecon) || 0,
       listedPrice: Number(editListed) || 0,
-      status: editStatus as any,
+      status: editStatus as InventoryVehicle['status'],
       notes: editNotes,
     });
     setEditing(false);
   }
 
   return (
-    <div>
+    <div className="py-8 md:py-12">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6"
+        transition={{ duration: 0.8, ease }}
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8"
       >
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/dashboard/inventory')}
-            className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors"
+            className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4" strokeWidth={1} />
           </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white">{vehicle.year} {vehicle.make} {vehicle.model}</h1>
@@ -143,16 +163,18 @@ export default function VehicleDetailPage() {
                   params.set('vin', vehicle.vin);
                   window.open(`/report/print?${params.toString()}`, '_blank');
                 }}
-                className="inline-flex items-center gap-2 bg-white/5 text-white px-4 py-2 rounded-xl text-sm hover:bg-white/10 transition-all"
+                className="inline-flex items-center gap-2 bg-white/5 text-white px-4 py-2 rounded-full text-sm hover:bg-white/10 transition-all"
+                style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '600ms' }}
               >
-                <Printer className="w-4 h-4" />
+                <Printer className="w-4 h-4" strokeWidth={1} />
                 Print Report
               </button>
               <button
                 onClick={startEdit}
-                className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/90 transition-all"
+                className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-all"
+                style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '600ms' }}
               >
-                <Edit3 className="w-4 h-4" />
+                <Edit3 className="w-4 h-4" strokeWidth={1} />
                 Edit
               </button>
             </>
@@ -160,16 +182,18 @@ export default function VehicleDetailPage() {
             <>
               <button
                 onClick={() => setEditing(false)}
-                className="inline-flex items-center gap-2 bg-white/5 text-white px-4 py-2 rounded-xl text-sm hover:bg-white/10 transition-all"
+                className="inline-flex items-center gap-2 bg-white/5 text-white px-4 py-2 rounded-full text-sm hover:bg-white/10 transition-all"
+                style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '600ms' }}
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" strokeWidth={1} />
                 Cancel
               </button>
               <button
                 onClick={saveEdit}
-                className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/90 transition-all"
+                className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-all"
+                style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '600ms' }}
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4" strokeWidth={1} />
                 Save
               </button>
             </>
@@ -179,81 +203,68 @@ export default function VehicleDetailPage() {
 
       {/* Top Cards */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1], delay: 0.1 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+        transition={{ duration: 0.8, ease, delay: 0.1 }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
-        <div className="p-1.5 rounded-[1.5rem] glass-card">
-          <div className="rounded-[calc(1.5rem-0.375rem)] glass-card-inner p-4">
-            <p className="text-[10px] text-white/40 uppercase tracking-wider">Condition Score</p>
-            <div className="mt-2">
-              <ConditionScoreBadge score={vehicle.conditionScore} size="sm" />
+        {[
+          { label: 'Condition Score', value: <ConditionScoreBadge score={vehicle.conditionScore} size="sm" /> },
+          { label: 'Total Investment', value: `$${investment.toLocaleString()}`, raw: true },
+          { label: 'Listed Price', value: `$${listed.toLocaleString()}`, raw: true },
+          { label: 'Est. Profit', value: `${profit >= 0 ? '+' : ''}$${profit.toLocaleString()}`, profit: true },
+        ].map((card, i) => (
+          <motion.div
+            key={card.label}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease, delay: i * 0.05 }}
+            className="p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl"
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-[#0a0a0a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] p-4">
+              <p className="text-[10px] text-white/40 uppercase tracking-wider">{card.label}</p>
+              <div className={`mt-2 ${card.profit ? (profit >= 0 ? 'text-emerald-400' : 'text-red-400') : ''}`}>
+                {card.raw || card.profit ? (
+                  <p className={`text-lg font-bold ${card.profit ? '' : 'text-white'}`}>{card.value}</p>
+                ) : (
+                  card.value
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="p-1.5 rounded-[1.5rem] glass-card">
-          <div className="rounded-[calc(1.5rem-0.375rem)] glass-card-inner p-4">
-            <p className="text-[10px] text-white/40 uppercase tracking-wider">Total Investment</p>
-            <p className="text-lg font-bold text-white mt-1">${investment.toLocaleString()}</p>
-          </div>
-        </div>
-        <div className="p-1.5 rounded-[1.5rem] glass-card">
-          <div className="rounded-[calc(1.5rem-0.375rem)] glass-card-inner p-4">
-            <p className="text-[10px] text-white/40 uppercase tracking-wider">Listed Price</p>
-            <p className="text-lg font-bold text-white mt-1">${listed.toLocaleString()}</p>
-          </div>
-        </div>
-        <div className="p-1.5 rounded-[1.5rem] glass-card">
-          <div className="rounded-[calc(1.5rem-0.375rem)] glass-card-inner p-4">
-            <p className="text-[10px] text-white/40 uppercase tracking-wider">Est. Profit</p>
-            <p className={`text-lg font-bold mt-1 ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {profit >= 0 ? '+' : ''}${profit.toLocaleString()}
-            </p>
-          </div>
-        </div>
+          </motion.div>
+        ))}
       </motion.div>
 
       {/* Dealer Details */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1], delay: 0.2 }}
+        transition={{ duration: 0.8, ease, delay: 0.2 }}
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        <div className="p-1.5 rounded-[2rem] glass-card">
-          <div className="rounded-[calc(2rem-0.375rem)] glass-card-inner p-6">
+        <div className="p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl">
+          <div className="rounded-[calc(2rem-0.375rem)] bg-[#0a0a0a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] p-6">
             <h3 className="text-sm font-semibold text-white/90 mb-4">Dealer Data</h3>
             <div className="space-y-4">
               {editing ? (
                 <>
-                  <div>
-                    <label className="block text-xs text-white/40 mb-1">Purchase Price</label>
-                    <input
-                      type="number"
-                      value={editPurchase}
-                      onChange={(e) => setEditPurchase(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-white/40 mb-1">Reconditioning</label>
-                    <input
-                      type="number"
-                      value={EditRecon}
-                      onChange={(e) => setEditRecon(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-white/40 mb-1">Listed Price</label>
-                    <input
-                      type="number"
-                      value={editListed}
-                      onChange={(e) => setEditListed(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white/20"
-                    />
-                  </div>
+                  {[
+                    { label: 'Purchase Price', value: editPurchase, setter: setEditPurchase },
+                    { label: 'Reconditioning', value: editRecon, setter: setEditRecon },
+                    { label: 'Listed Price', value: editListed, setter: setEditListed },
+                  ].map((field) => (
+                    <div key={field.label}>
+                      <label className="block text-xs text-white/40 mb-1">{field.label}</label>
+                      <input
+                        type="number"
+                        value={field.value}
+                        onChange={(e) => field.setter(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white/20 transition-colors"
+                        style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}
+                      />
+                    </div>
+                  ))}
                   <div>
                     <label className="block text-xs text-white/40 mb-1">Status</label>
                     <select
@@ -274,36 +285,26 @@ export default function VehicleDetailPage() {
                       value={editNotes}
                       onChange={(e) => setEditNotes(e.target.value)}
                       rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white/20 resize-none"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-white/20 resize-none transition-colors"
+                      style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}
                     />
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Purchase Price</span>
-                    <span className="text-white/80">${vehicle.purchasePrice.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Reconditioning</span>
-                    <span className="text-white/80">${vehicle.reconditioningCost.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Listed Price</span>
-                    <span className="text-white/80">${(vehicle.listedPrice || vehicle.marketValueMid).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Status</span>
-                    <span className="capitalize text-white/80">{vehicle.status}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Source</span>
-                    <span className="text-white/80">{vehicle.source || '—'}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Date Acquired</span>
-                    <span className="text-white/80">{vehicle.dateAcquired}</span>
-                  </div>
+                  {[
+                    { label: 'Purchase Price', value: `$${vehicle.purchasePrice.toLocaleString()}` },
+                    { label: 'Reconditioning', value: `$${vehicle.reconditioningCost.toLocaleString()}` },
+                    { label: 'Listed Price', value: `$${(vehicle.listedPrice || vehicle.marketValueMid).toLocaleString()}` },
+                    { label: 'Status', value: vehicle.status, capitalize: true },
+                    { label: 'Source', value: vehicle.source || '—' },
+                    { label: 'Date Acquired', value: vehicle.dateAcquired },
+                  ].map((item) => (
+                    <div key={item.label} className="flex justify-between text-sm">
+                      <span className="text-white/40">{item.label}</span>
+                      <span className={`text-white/80 ${item.capitalize ? 'capitalize' : ''}`}>{item.value}</span>
+                    </div>
+                  ))}
                   {vehicle.notes && (
                     <div className="pt-3 border-t border-white/5">
                       <span className="text-xs text-white/40">Notes</span>
@@ -318,8 +319,14 @@ export default function VehicleDetailPage() {
 
         <div className="space-y-6">
           {/* Title & History Summary */}
-          <div className="p-1.5 rounded-[2rem] glass-card">
-            <div className="rounded-[calc(2rem-0.375rem)] glass-card-inner p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease }}
+            className="p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl"
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-[#0a0a0a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] p-6">
               <h3 className="text-sm font-semibold text-white/90 mb-4">History Summary</h3>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
@@ -348,14 +355,20 @@ export default function VehicleDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Red Flags */}
           {vehicle.redFlags.length > 0 && (
-            <div className="p-1.5 rounded-[2rem] glass-card">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease }}
+              className="p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl"
+            >
               <div className="rounded-[calc(2rem-0.375rem)] bg-red-500/5 border border-red-500/10 p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                  <AlertTriangle className="w-4 h-4 text-red-400" strokeWidth={1} />
                   <h3 className="text-sm font-semibold text-red-400">Red Flags</h3>
                 </div>
                 <ul className="space-y-1.5">
@@ -367,48 +380,53 @@ export default function VehicleDetailPage() {
                   ))}
                 </ul>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Competitive Market Lens */}
-          <div className="p-1.5 rounded-[2rem] glass-card">
-            <div className="rounded-[calc(2rem-0.375rem)] glass-card-inner p-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease }}
+            className="p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/[0.08] backdrop-blur-2xl"
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-[#0a0a0a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] p-6">
               <div className="flex items-center gap-2 mb-4">
-                <Eye className="w-4 h-4 text-blue-400" />
+                <Eye className="w-4 h-4 text-blue-400" strokeWidth={1} />
                 <h3 className="text-sm font-semibold text-white/90">Market Lens</h3>
                 <span className="text-[10px] text-white/30 ml-auto">{marketData.competitorCount} similar listings within 50 mi</span>
               </div>
 
               <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="text-center p-3 rounded-xl bg-white/[0.03]">
-                  <p className="text-[10px] text-white/40 uppercase">Avg Price</p>
-                  <p className="text-sm font-bold text-white mt-0.5">${marketData.avgPrice.toLocaleString()}</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-white/[0.03]">
-                  <p className="text-[10px] text-white/40 uppercase">Avg Days Listed</p>
-                  <p className="text-sm font-bold text-white mt-0.5">{marketData.avgDays}</p>
-                </div>
-                <div className="text-center p-3 rounded-xl bg-white/[0.03]">
-                  <p className="text-[10px] text-white/40 uppercase">Price Trend</p>
-                  <div className="flex items-center justify-center gap-1 mt-0.5">
-                    {marketData.priceTrend === 'rising' ? (
-                      <>
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                {[
+                  { label: 'Avg Price', value: `$${marketData.avgPrice.toLocaleString()}` },
+                  { label: 'Avg Days Listed', value: `${marketData.avgDays}` },
+                  {
+                    label: 'Price Trend',
+                    value: marketData.priceTrend === 'rising' ? (
+                      <span className="flex items-center justify-center gap-1">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" strokeWidth={1} />
                         <span className="text-sm font-bold text-emerald-400">Rising</span>
-                      </>
+                      </span>
                     ) : marketData.priceTrend === 'falling' ? (
-                      <>
-                        <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                      <span className="flex items-center justify-center gap-1">
+                        <TrendingDown className="w-3.5 h-3.5 text-red-400" strokeWidth={1} />
                         <span className="text-sm font-bold text-red-400">Falling</span>
-                      </>
+                      </span>
                     ) : (
-                      <>
-                        <Minus className="w-3.5 h-3.5 text-white/40" />
+                      <span className="flex items-center justify-center gap-1">
+                        <Minus className="w-3.5 h-3.5 text-white/40" strokeWidth={1} />
                         <span className="text-sm font-bold text-white/60">Stable</span>
-                      </>
-                    )}
+                      </span>
+                    ),
+                  },
+                ].map((stat) => (
+                  <div key={stat.label} className="text-center p-3 rounded-xl bg-white/[0.03]">
+                    <p className="text-[10px] text-white/40 uppercase tracking-wider">{stat.label}</p>
+                    <div className="mt-0.5">{typeof stat.value === 'string' ? <p className="text-sm font-bold text-white">{stat.value}</p> : stat.value}</div>
                   </div>
-                </div>
+                ))}
               </div>
 
               <div className="mb-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
@@ -442,14 +460,14 @@ export default function VehicleDetailPage() {
               <div className="space-y-2">
                 <p className="text-[10px] text-white/40 uppercase tracking-wider">Competitor Listings</p>
                 {marketData.competitors.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                  <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors" style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', transitionDuration: '500ms' }}>
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${c.isNewer ? 'bg-emerald-400' : 'bg-white/20'}`} />
                       <div>
                         <p className="text-xs text-white/70">{c.dealer}</p>
                         <div className="flex items-center gap-2 text-[10px] text-white/30">
                           <span className="flex items-center gap-0.5">
-                            <MapPin className="w-2.5 h-2.5" />
+                            <MapPin className="w-2.5 h-2.5" strokeWidth={1} />
                             {c.distance} mi
                           </span>
                           <span>{c.daysListed} days listed</span>
@@ -466,7 +484,7 @@ export default function VehicleDetailPage() {
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </motion.div>
     </div>

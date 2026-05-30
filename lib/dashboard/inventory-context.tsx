@@ -47,27 +47,25 @@ const InventoryContext = createContext<InventoryContextType>({
 
 const STORAGE_KEY = 'autotrace_inventory';
 
+function getInitialInventory(): InventoryVehicle[] {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export function InventoryProvider({ children }: { children: ReactNode }) {
-  const [vehicles, setVehicles] = useState<InventoryVehicle[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [vehicles, setVehicles] = useState<InventoryVehicle[]>(getInitialInventory);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setVehicles(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse inventory', e);
-      }
-    }
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (loaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
-    }
-  }, [vehicles, loaded]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(vehicles));
+  }, [vehicles]);
 
   function addVehicle(vehicle: InventoryVehicle) {
     setVehicles(prev => {

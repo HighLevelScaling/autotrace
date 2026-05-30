@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { getScoreLabel, getScoreBg } from '@/lib/condition-score';
 
 interface ConditionScoreBadgeProps {
@@ -17,12 +18,6 @@ export function ConditionScoreBadge({ score, size = 'md' }: ConditionScoreBadgeP
     lg: 'w-20 h-20 text-3xl',
   };
 
-  const ringClasses = {
-    sm: 'ring-2',
-    md: 'ring-[3px]',
-    lg: 'ring-4',
-  };
-
   const circumference = 2 * Math.PI * 40;
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
@@ -36,32 +31,40 @@ export function ConditionScoreBadge({ score, size = 'md' }: ConditionScoreBadgeP
 
   return (
     <div className="flex items-center gap-3">
-      <div className={`relative ${sizeClasses[size]} flex items-center justify-center`}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+        viewport={{ once: true, margin: '-80px' }}
+        className={`relative ${sizeClasses[size]} flex items-center justify-center`}
+      >
         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
           <circle
             cx="50" cy="50" r="40"
             fill="none"
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth="8"
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth="6"
           />
-          <circle
+          <motion.circle
             cx="50" cy="50" r="40"
             fill="none"
             stroke={getStrokeColor()}
-            strokeWidth="8"
+            strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            className="transition-all duration-1000 ease-out"
+            initial={{ strokeDashoffset: circumference }}
+            whileInView={{ strokeDashoffset }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1], delay: 0.2 }}
+            viewport={{ once: true, margin: '-80px' }}
           />
         </svg>
-        <span className="relative font-bold text-white">{score}</span>
-      </div>
+        <span className="relative font-bold text-white tabular-nums">{score}</span>
+      </motion.div>
       <div>
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${bgClass}`}>
           {label}
         </span>
-        <p className="text-[10px] text-white/30 mt-1">Condition Score</p>
+        <p className="text-[10px] text-white/25 mt-1">Condition Score</p>
       </div>
     </div>
   );

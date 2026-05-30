@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { VehicleReport } from '@/lib/types';
 import { getScoreLabel } from '@/lib/condition-score';
-import { Car, ShieldCheck, FileCheck, Receipt, ArrowRightLeft, AlertTriangle, Wrench, Calendar, MapPin, DollarSign, Gauge } from 'lucide-react';
+import { Car, ShieldCheck, FileCheck, Receipt, AlertTriangle, Wrench } from 'lucide-react';
 
 const serviceTypeLabels: Record<string, string> = {
   oil_change: 'Oil Change', inspection: 'Inspection', tire_rotation: 'Tire Rotation',

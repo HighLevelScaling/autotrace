@@ -49,7 +49,7 @@ function ReportContent() {
         }
 
         setReport(data.data);
-      } catch (err) {
+      } catch {
         setError('Network error. Please try again.');
       } finally {
         setLoading(false);
@@ -82,7 +82,7 @@ function ReportContent() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" strokeWidth={1.5} />
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" strokeWidth={1} />
           <h2 className="text-xl font-semibold text-white mb-2">Unable to load report</h2>
           <p className="text-white/50 mb-6">{error}</p>
           <button

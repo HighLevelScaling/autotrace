@@ -356,7 +356,7 @@ export function generateBulkReports(vins: string[]): BulkReport[] {
         registrationStatus: report.registration.status,
         status: 'success',
       };
-    } catch (err) {
+    } catch {
       return {
         vin,
         make: '', model: '', year: 0, conditionScore: 0,
