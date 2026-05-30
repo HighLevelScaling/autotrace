@@ -12,6 +12,8 @@ import {
   DollarSign,
   TrendingDown,
   Plus,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { useInventory } from '@/lib/dashboard/inventory-context';
 
@@ -36,6 +38,23 @@ function getSuggestedPriceDrop(listedPrice: number, days: number): number {
   if (days >= 45) return Math.round(listedPrice * 0.03);
   if (days >= 30) return Math.round(listedPrice * 0.02);
   return 0;
+}
+
+function getFraudRisk(titleBrands: string[], redFlags: string[], accidentCount: number): { score: number; level: 'low' | 'medium' | 'high' | 'critical' } {
+  let score = 0;
+  const badBrands = ['salvage', 'flood', 'rebuilt', 'lemon', 'odometer_rollback'];
+  for (const brand of titleBrands) {
+    if (badBrands.includes(brand)) score += brand === 'salvage' ? 30 : brand === 'flood' ? 28 : 20;
+  }
+  score += accidentCount * 5;
+  if (redFlags.some(f => f.includes('rollback'))) score += 25;
+  if (redFlags.some(f => f.includes('Total loss'))) score += 20;
+  score = Math.min(100, score);
+  let level: 'low' | 'medium' | 'high' | 'critical' = 'low';
+  if (score >= 60) level = 'critical';
+  else if (score >= 40) level = 'high';
+  else if (score >= 20) level = 'medium';
+  return { score, level };
 }
 
 export default function InventoryPage() {
@@ -189,6 +208,7 @@ export default function InventoryPage() {
                     <th className="pb-3 text-xs font-medium text-white/40 uppercase text-right hidden sm:table-cell tracking-wider">Est. Profit</th>
                     <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center tracking-wider">Status</th>
                     <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center hidden xl:table-cell tracking-wider">Floor Plan</th>
+                    <th className="pb-3 text-xs font-medium text-white/40 uppercase text-center hidden lg:table-cell tracking-wider">Fraud</th>
                     <th className="pb-3 pr-2 text-xs font-medium text-white/40 uppercase tracking-wider"></th>
                   </tr>
                 </thead>
@@ -278,6 +298,27 @@ export default function InventoryPage() {
                             <DollarSign className="w-3 h-3 text-white/20" strokeWidth={1} />
                             <span className="text-xs text-white/40">${floorPlanCost.toLocaleString()}</span>
                           </div>
+                        </td>
+                        <td className="py-3 text-center hidden lg:table-cell">
+                          {(() => {
+                            const fraud = getFraudRisk(v.titleBrands, v.redFlags, v.accidentCount);
+                            return fraud.level === 'low' ? (
+                              <ShieldCheck className="w-4 h-4 text-emerald-400 mx-auto" strokeWidth={1} />
+                            ) : (
+                              <div className="flex items-center justify-center gap-1">
+                                <ShieldAlert className={`w-4 h-4 ${
+                                  fraud.level === 'critical' ? 'text-rose-400' :
+                                  fraud.level === 'high' ? 'text-orange-400' :
+                                  'text-amber-400'
+                                }`} strokeWidth={1} />
+                                <span className={`text-[10px] font-medium ${
+                                  fraud.level === 'critical' ? 'text-rose-400' :
+                                  fraud.level === 'high' ? 'text-orange-400' :
+                                  'text-amber-400'
+                                }`}>{fraud.score}</span>
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="py-3 pr-2">
                           <button

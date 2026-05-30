@@ -1,6 +1,8 @@
-import { VehicleReport, SearchType, TitleBrand, BulkReport } from './types';
+import { VehicleReport, SearchType, TitleBrand, BulkReport, TitleHistoryEntry } from './types';
 import { decodeVIN } from './vin-decoder';
 import { calculateConditionScore } from './condition-score';
+import { calculateVelocity } from './velocity-engine';
+import { calculateFraud } from './fraud-engine';
 
 function hashString(str: string): number {
   let hash = 0;
@@ -260,6 +262,77 @@ function generateTitleBrands(rng: SeededRandom, hasAccidents: boolean, hasTotalL
     return brands.filter((b) => b !== 'clean');
   }
   return brands;
+}
+
+function generateTitleHistory(
+  rng: SeededRandom,
+  initialState: string,
+  finalBrands: TitleBrand[],
+  purchaseDate: Date,
+  now: Date
+): TitleHistoryEntry[] {
+  const history: TitleHistoryEntry[] = [];
+  const states = ['CA', 'TX', 'FL', 'NY', 'PA', 'IL', 'OH', 'GA', 'NC', 'MI', 'NJ', 'VA', 'WA', 'AZ', 'MA', 'TN', 'IN', 'MO', 'MD', 'WI'];
+
+  // Start with clean title at purchase
+  history.push({
+    date: formatDate(purchaseDate),
+    state: initialState,
+    brand: 'clean',
+    mileage: rng.nextInt(5000, 25000),
+    issuer: `${rng.pick(['DMV', 'County Clerk', 'Tag Agency'])} ${initialState}`,
+  });
+
+  // 15% chance of title wash pattern (bad brand → clean in different state)
+  const hasWashPattern = rng.chance(0.15);
+
+  if (hasWashPattern && finalBrands.some((b) => ['clean', 'rebuilt'].includes(b))) {
+    // Add a bad title entry in a different state
+    const badState = rng.pick(states.filter((s) => s !== initialState));
+    const washDate = rng.dateBetween(
+      purchaseDate,
+      new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
+    );
+    const badBrand = rng.pick(['salvage', 'flood'] as TitleBrand[]);
+
+    history.push({
+      date: formatDate(washDate),
+      state: badState,
+      brand: badBrand,
+      mileage: rng.nextInt(50000, 100000),
+      issuer: `${rng.pick(['DMV', 'County Clerk'])} ${badState}`,
+    });
+
+    // Then clean title back in original or another state
+    const cleanState = rng.pick(states.filter((s) => s !== badState));
+    const cleanDate = rng.dateBetween(washDate, now);
+    history.push({
+      date: formatDate(cleanDate),
+      state: cleanState,
+      brand: 'clean',
+      mileage: rng.nextInt(60000, 110000),
+      issuer: `${rng.pick(['DMV', 'County Clerk'])} ${cleanState}`,
+    });
+  }
+
+  // Add 1-2 more normal transfers
+  const extraEntries = rng.nextInt(1, 2);
+  for (let i = 0; i < extraEntries; i++) {
+    const lastEntry = history[history.length - 1];
+    const nextDate = rng.dateBetween(new Date(lastEntry.date), now);
+    if (nextDate <= new Date(lastEntry.date)) continue;
+
+    history.push({
+      date: formatDate(nextDate),
+      state: rng.pick(states),
+      brand: i === extraEntries - 1 ? finalBrands[0] || 'clean' : 'clean',
+      mileage: lastEntry.mileage + rng.nextInt(10000, 40000),
+      issuer: `${rng.pick(['DMV', 'County Clerk', 'Motor Vehicle'])} ${rng.pick(states)}`,
+    });
+  }
+
+  // Sort by date
+  return history.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
 function calculateMarketValue(
@@ -550,6 +623,9 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
     (BASE_VALUES[make] || 25000) * Math.pow(0.88, new Date().getFullYear() - year) * (0.65 + rng.next() * 0.17)
   );
 
+  // Title History (for fraud detection)
+  const titleHistory = generateTitleHistory(rng, state, titleBrands, year, purchaseDate, now);
+
   // Build report object
   const report: VehicleReport = {
     vin,
@@ -602,12 +678,23 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
     transfers,
     accidents,
     serviceRecords,
+    titleHistory,
+    fraud: {
+      fraudScore: 0,
+      riskLevel: 'low',
+      titleWashDetected: false,
+      odometerRollbackProbability: 0,
+      totalLossDecision: 'uncertain',
+      flags: [],
+    },
   };
 
   // Calculate derived fields
   report.conditionScore = calculateConditionScore(report);
   report.marketValue = calculateMarketValue(make, year, report.conditionScore);
   report.redFlags = generateRedFlags(report);
+  report.velocity = calculateVelocity(report);
+  report.fraud = calculateFraud(report);
 
   return report;
 }

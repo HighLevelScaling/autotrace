@@ -8,6 +8,26 @@ export interface SearchRequest {
 
 export type TitleBrand = 'clean' | 'salvage' | 'rebuilt' | 'flood' | 'lemon' | 'theft' | 'odometer_rollback';
 
+export interface TitleHistoryEntry {
+  date: string;
+  state: string;
+  brand: TitleBrand;
+  mileage: number;
+  issuer: string;
+}
+
+export interface FraudReport {
+  fraudScore: number;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  titleWashDetected: boolean;
+  titleWashDetails?: string;
+  odometerRollbackProbability: number;
+  odometerRollbackDetails?: string;
+  totalLossDecision: 'total-loss' | 'repairable' | 'uncertain';
+  totalLossDetails?: string;
+  flags: string[];
+}
+
 export interface VehicleReport {
   vin: string;
   make: string;
@@ -94,6 +114,8 @@ export interface VehicleReport {
   averageDaysOnLot: number;
   wholesaleBook: number;
   velocity: VelocityReport;
+  titleHistory: TitleHistoryEntry[];
+  fraud: FraudReport;
 }
 
 export interface PaintMeterReading {
