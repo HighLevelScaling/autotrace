@@ -2,7 +2,11 @@ import { pbkdf2Sync, timingSafeEqual } from 'crypto';
 
 const SALT = Buffer.from('autotrace-demo-salt-v1');
 const DEMO_PASSWORD_HASH = pbkdf2Sync('demo', SALT, 100_000, 32, 'sha256');
-const SECRET = process.env.AUTH_SECRET || 'autotrace-dev-secret-change-me';
+const SECRET = process.env.AUTH_SECRET;
+
+if (!SECRET) {
+  throw new Error('AUTH_SECRET environment variable is required');
+}
 
 // ── Password Verification (Node.js crypto) ──
 export function verifyPassword(password: string): boolean {
