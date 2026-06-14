@@ -2,10 +2,18 @@ import { pbkdf2Sync, timingSafeEqual } from 'crypto';
 
 const SALT = Buffer.from('autotrace-demo-salt-v1');
 const DEMO_PASSWORD_HASH = pbkdf2Sync('demo', SALT, 100_000, 32, 'sha256');
-const SECRET = process.env.AUTH_SECRET;
 
-if (!SECRET) {
-  throw new Error('AUTH_SECRET environment variable is required');
+// Validate AUTH_SECRET lazily, at first use — NOT at module load. A
+// module-level throw crashes `next build` (page-data collection) and every
+// route the moment this file is imported, even though the secret is purely a
+// runtime concern. Deferring keeps build/SSG working while still enforcing the
+// secret on any real signing/verification.
+function requireSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error('AUTH_SECRET environment variable is required');
+  }
+  return secret;
 }
 
 // ── Password Verification (Node.js crypto) ──
@@ -22,7 +30,7 @@ export function verifyPassword(password: string): boolean {
 async function getSigningKey(): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(SECRET),
+    new TextEncoder().encode(requireSecret()),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify']
