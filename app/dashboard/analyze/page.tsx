@@ -13,7 +13,7 @@ import {
   DollarSign,
   Car,
 } from 'lucide-react';
-import { AcquisitionAnalysis, MarketArbitrage } from '@/lib/acquisition-engine';
+import { AcquisitionAnalysis } from '@/lib/acquisition-engine';
 
 const ease = [0.32, 0.72, 0, 1] as const;
 

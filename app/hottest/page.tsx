@@ -26,15 +26,29 @@ export default function HottestPage() {
   const [period, setPeriod] = useState<Period>('weekly');
   const [cars, setCars] = useState<HottestCar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadedPeriod, setLoadedPeriod] = useState<Period>(period);
+
+  // Show the loading state the moment `period` changes — done during render
+  // (React's recommended pattern) rather than synchronously inside the effect,
+  // which react-hooks flags as a cascading-render risk.
+  if (loadedPeriod !== period) {
+    setLoadedPeriod(period);
+    setLoading(true);
+  }
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     fetch(`/api/hottest-cars?period=${period}&limit=10`)
       .then((r) => r.json())
       .then((data) => {
-        if (data.success) setCars(data.cars);
+        if (active && data.success) setCars(data.cars);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [period]);
 
   return (
