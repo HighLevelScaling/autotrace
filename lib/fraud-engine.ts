@@ -1,4 +1,4 @@
-import { VehicleReport, FraudReport, TitleHistoryEntry } from './types';
+import { VehicleReport, FraudReport } from './types';
 
 export function calculateFraud(report: VehicleReport): FraudReport {
   let fraudScore = 0;
@@ -92,6 +92,32 @@ export function calculateFraud(report: VehicleReport): FraudReport {
         // Over 500 miles/day average
         fraudScore += 10;
         flags.push(`Unrealistic mileage accumulation: ${Math.round(milesDiff / daysDiff)} mi/day`);
+        break;
+      }
+    }
+  }
+
+  // Odometer rollback from TITLE-RECORD mileage. NMVTIS reports odometer
+  // readings on title/brand events (not service visits), so when real history
+  // is present this is the authoritative rollback signal. Runs alongside the
+  // service-record check above; either can trigger.
+  if (!odometerRollbackDetails && report.titleHistory && report.titleHistory.length >= 2) {
+    const sortedTitles = [...report.titleHistory]
+      .filter((t) => t.mileage > 0)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    for (let i = 0; i < sortedTitles.length - 1; i++) {
+      const current = sortedTitles[i];
+      const next = sortedTitles[i + 1];
+      if (next.mileage < current.mileage) {
+        const rollback = current.mileage - next.mileage;
+        odometerRollbackProbability = Math.max(
+          odometerRollbackProbability,
+          Math.min(98, 70 + rollback / 1000)
+        );
+        odometerRollbackDetails = `Title odometer dropped from ${current.mileage.toLocaleString()} mi (${current.state}, ${current.date}) to ${next.mileage.toLocaleString()} mi (${next.state}, ${next.date})`;
+        fraudScore += 40;
+        flags.push(`Odometer rollback on title record: ${rollback.toLocaleString()} miles`);
         break;
       }
     }

@@ -135,6 +135,68 @@ export interface VehicleReport {
   fraud: FraudReport;
   powertrain: 'ice' | 'hybrid' | 'bev' | 'phev';
   battery?: BatteryReport;
+
+  // Real-data provenance: populated when a live source (e.g. NHTSA vPIC)
+  // successfully enriches the base report. Absent => fully synthetic.
+  nhtsa?: NHTSAEnrichment;
+
+  // Populated when VINAUDIT_API_KEY is set and the VinAudit Specs API
+  // returns attributes for this VIN. Absent => no VinAudit data available.
+  vinaudit?: VinAuditEnrichment;
+
+  // Populated when the billable VinAudit History (NMVTIS) pull succeeds. When
+  // present, report.titleHistory/titleBrands/fraud are derived from REAL title
+  // records, not synthetic data.
+  nmvtis?: NMVTISProvenance;
+}
+
+export interface NMVTISProvenance {
+  source: 'vinaudit-nmvtis';
+  pulledAt: string;
+  mode: 'live' | 'test';
+  recordCount: number;
+  odometerReadings: { date: string; mileage: number; source: string }[];
+  theftOnRecord: boolean;
+  // True when NMVTIS returned no adverse brands/theft — an authoritative
+  // clean history (distinct from "no data available").
+  cleanHistory: boolean;
+}
+
+export interface VinAuditEnrichment {
+  source: 'vinaudit-specs';
+  decodedAt: string;
+  mode: 'live' | 'test';
+  trim?: string;
+  engine?: string;
+  transmission?: string;
+  drivetrain?: string;
+  fuelType?: string;
+  doors?: string;
+  // Manufacturer/standard equipment list when include=equipment is requested.
+  equipment: string[];
+}
+
+export interface NHTSARecall {
+  campaignNumber: string;
+  component: string;
+  summary: string;
+  consequence: string;
+  remedy: string;
+  reportDate: string;
+}
+
+export interface NHTSAEnrichment {
+  source: 'nhtsa-vpic';
+  decodedAt: string;
+  // Authoritative spec fields straight from the manufacturer record
+  trim?: string;
+  bodyClass?: string;
+  fuelType?: string;
+  engineCylinders?: string;
+  driveType?: string;
+  plantCountry?: string;
+  recalls: NHTSARecall[];
+  recallCount: number;
 }
 
 export interface PaintMeterReading {

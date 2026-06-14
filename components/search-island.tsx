@@ -1,9 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Car, CreditCard, IdCard, Loader2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+// A prefill signal from elsewhere on the page (e.g. the hero scanner's
+// "Try this VIN"). The `nonce` lets the same VIN re-trigger the effect.
+export interface SearchPrefill {
+  vin: string;
+  nonce: number;
+}
+
+interface SearchIslandProps {
+  prefill?: SearchPrefill | null;
+}
 
 const tabs = [
   { id: 'vin' as const, label: 'VIN', icon: Car, placeholder: 'Enter 17-character VIN...', example: '1HGCV1F3XNA123456' },
@@ -13,15 +24,41 @@ const tabs = [
 
 const STATES = ['CA','TX','FL','NY','PA','IL','OH','GA','NC','MI','NJ','VA','WA','AZ','MA'];
 
-export function SearchIsland() {
+export function SearchIsland({ prefill }: SearchIslandProps = {}) {
   const [activeTab, setActiveTab] = useState<'vin' | 'plate' | 'dl'>('vin');
   const [value, setValue] = useState('');
   const [state, setState] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [justFilled, setJustFilled] = useState(false);
+  const [appliedNonce, setAppliedNonce] = useState<number | undefined>(undefined);
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const activeTabData = tabs.find((t) => t.id === activeTab)!;
+
+  // Adjust state when the `prefill` prop changes — React's recommended pattern
+  // (set state during render, not in an effect) for syncing to a prop. The
+  // nonce guards against re-applying the same signal and lets an identical VIN
+  // re-fire. Imperative DOM work (scroll/focus) lives in the effect below.
+  if (prefill && prefill.nonce !== appliedNonce) {
+    setAppliedNonce(prefill.nonce);
+    setActiveTab('vin');
+    setValue(prefill.vin);
+    setError('');
+    setJustFilled(true);
+  }
+
+  // After a prefill is applied, reveal + focus the input, then clear the
+  // highlight. setState here is async (timeout callback), not a synchronous
+  // effect-body call.
+  useEffect(() => {
+    if (appliedNonce === undefined) return;
+    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    inputRef.current?.focus({ preventScroll: true });
+    const id = setTimeout(() => setJustFilled(false), 1200);
+    return () => clearTimeout(id);
+  }, [appliedNonce]);
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -92,11 +129,14 @@ export function SearchIsland() {
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <input
+                  ref={inputRef}
                   type="text"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   placeholder={activeTabData.placeholder}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                  className={`w-full bg-white/5 border rounded-xl px-4 py-3.5 text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                    justFilled ? 'border-indigo-500/50 ring-1 ring-indigo-500/30' : 'border-white/10'
+                  }`}
                   disabled={loading}
                 />
                 {activeTab === 'plate' && (

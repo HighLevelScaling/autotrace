@@ -7,8 +7,15 @@ import { checkRateLimit } from '@/lib/rate-limiter';
 import { validateVIN, validatePlate, validateDL, validateState, validateVINs } from '@/lib/validation';
 import { deductCredits } from '@/lib/credits';
 import { corsHeaders } from '@/lib/cors';
+import { enrichReportWithNHTSA } from '@/lib/nhtsa';
+import { enrichReportWithVinAudit } from '@/lib/vinaudit';
+import { applyRealTitleHistory } from '@/lib/vinaudit-history';
+import { calculateFraud } from '@/lib/fraud-engine';
 
 const COST_PER_PULL = 0.5;
+// Real-data enrichment is on by default (NHTSA is free + keyless). Set
+// DISABLE_NHTSA=1 to force fully deterministic/synthetic reports for demos.
+const NHTSA_ENABLED = process.env.DISABLE_NHTSA !== '1';
 const MAX_BODY_SIZE = 1024 * 1024; // 1MB
 
 interface MinimalReport {
@@ -173,6 +180,31 @@ export async function POST(req: NextRequest) {
     }
 
     const report = generateReport(type as SearchType, sanitizedValue, sanitizedState);
+
+    // Layer authoritative NHTSA data over the synthetic base for VIN lookups.
+    // Plate/DL paths have no VIN to decode, so they stay fully synthetic.
+    // enrichReportWithNHTSA never throws — a network/API failure silently
+    // leaves the mock report intact.
+    if (NHTSA_ENABLED && type === 'vin') {
+      // NHTSA first (authoritative make/model/year + recalls), then VinAudit
+      // refines with trim/engine/transmission/equipment when a key is present.
+      // Both are sequential because VinAudit's powertrain refinement reads the
+      // value NHTSA may have set. enrichReportWithVinAudit is a no-op without
+      // VINAUDIT_API_KEY, so this stays free until the key is configured.
+      await enrichReportWithNHTSA(report);
+      await enrichReportWithVinAudit(report);
+
+      // Billable NMVTIS history pull (the user already paid COST_PER_PULL).
+      // Returns true only when real title records were applied; in that case
+      // re-run fraud scoring so titleWash/odometer analysis reflects real
+      // titles + odometer instead of the synthetic ones generateReport set.
+      const realHistory = await applyRealTitleHistory(report);
+      if (realHistory) {
+        report.fraud = calculateFraud(report);
+      }
+    }
+
+    // Velocity runs AFTER enrichment so it scores real make/model/recalls.
     report.velocity = calculateVelocity(report);
     return NextResponse.json(
       { success: true, data: report, remainingCredits: creditResult.balance },
