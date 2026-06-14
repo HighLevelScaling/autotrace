@@ -651,6 +651,7 @@ export function generateReport(type: SearchType, value: string, stateParam?: str
     paintMeterReadings: paintMeterReadings.slice(0, rng.nextInt(5, 9)),
     averageDaysOnLot,
     wholesaleBook,
+    powertrain: 'ice',
     velocity: {
       velocityScore: 0,
       daysToSellEstimate: 0,
