@@ -5,6 +5,21 @@ interface RateLimitEntry {
 
 const store = new Map<string, RateLimitEntry>();
 
+// Use a secret salt so attackers can't easily bypass rate limits by IP manipulation
+const RATE_LIMIT_SECRET = process.env.RATE_LIMIT_SECRET || process.env.AUTH_SECRET;
+
+function hashKey(key: string): string {
+  if (!RATE_LIMIT_SECRET) return key;
+  let hash = 0;
+  const combined = key + RATE_LIMIT_SECRET;
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
+
 function getClientIP(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for');
   if (forwarded) return forwarded.split(',')[0].trim();
@@ -25,7 +40,7 @@ export function checkRateLimit(
   const windowMs = options.windowMs ?? 60_000; // 1 minute
   const maxRequests = options.maxRequests ?? 30;
 
-  const key = getClientIP(req);
+  const key = hashKey(getClientIP(req));
   const now = Date.now();
   const entry = store.get(key);
 

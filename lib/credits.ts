@@ -37,9 +37,13 @@ function loadFromDisk() {
 
 function saveToDisk() {
   try {
-    fs.writeFileSync(CREDITS_FILE, JSON.stringify(memoryStore, null, 2));
+    // Atomic write: write to temp file then rename
+    const tempFile = `${CREDITS_FILE}.tmp`;
+    fs.writeFileSync(tempFile, JSON.stringify(memoryStore, null, 2));
+    fs.renameSync(tempFile, CREDITS_FILE);
   } catch {
-    // Ignore write errors (e.g., read-only filesystem on Vercel)
+    // Silently fail on read-only filesystems (Vercel serverless)
+    // Production: Replace with Redis/PostgreSQL/Stripe Customer Balance
   }
 }
 

@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { SearchIsland } from '@/components/search-island';
+import { VinScanAnimation } from '@/components/vin-scan-animation';
 import {
   Shield,
   Clock,
@@ -55,6 +57,9 @@ const b2bFeatures = [
 
 export default function HomePage() {
   const router = useRouter();
+  // Prefill signal from the hero scanner → search box. Nonce lets the same
+  // VIN re-trigger the fill if the user clicks "Try this VIN" twice.
+  const [prefill, setPrefill] = useState<{ vin: string; nonce: number } | null>(null);
 
   return (
     <main className="relative min-h-[100dvh] flex flex-col items-center overflow-hidden bg-[#050505]">
@@ -105,14 +110,24 @@ export default function HomePage() {
           validation, registration, tickets, accidents, and full service history.
         </motion.p>
 
+        {/* Live intelligence scan — primes the user on the payoff before input */}
+        <motion.div
+          initial={{ opacity: 0, y: 30, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.8, ease: easeCustom, delay: 0.35 }}
+          className="mt-10 sm:mt-12"
+        >
+          <VinScanAnimation onTryVin={(vin) => setPrefill({ vin, nonce: Date.now() })} />
+        </motion.div>
+
         {/* Search Island */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: easeCustom, delay: 0.35 }}
+          transition={{ duration: 0.8, ease: easeCustom, delay: 0.5 }}
           className="mt-10 sm:mt-12"
         >
-          <SearchIsland />
+          <SearchIsland prefill={prefill} />
         </motion.div>
       </section>
 

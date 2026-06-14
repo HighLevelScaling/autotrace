@@ -15,6 +15,8 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useInventory, InventoryVehicle } from '@/lib/dashboard/inventory-context';
@@ -43,6 +45,23 @@ interface MarketData {
 function seededRandom(seed: number): number {
   const x = Math.sin(seed * 9301 + 49297) * 49297;
   return x - Math.floor(x);
+}
+
+function getFraudRisk(titleBrands: string[], redFlags: string[], accidentCount: number): { score: number; level: 'low' | 'medium' | 'high' | 'critical' } {
+  let score = 0;
+  const badBrands = ['salvage', 'flood', 'rebuilt', 'lemon', 'odometer_rollback'];
+  for (const brand of titleBrands) {
+    if (badBrands.includes(brand)) score += brand === 'salvage' ? 30 : brand === 'flood' ? 28 : 20;
+  }
+  score += accidentCount * 5;
+  if (redFlags.some(f => f.includes('rollback'))) score += 25;
+  if (redFlags.some(f => f.includes('Total loss'))) score += 20;
+  score = Math.min(100, score);
+  let level: 'low' | 'medium' | 'high' | 'critical' = 'low';
+  if (score >= 60) level = 'critical';
+  else if (score >= 40) level = 'high';
+  else if (score >= 20) level = 'medium';
+  return { score, level };
 }
 
 function generateCompetitorData(vin: string, basePrice: number, listedPrice: number): MarketData {
@@ -213,6 +232,28 @@ export default function VehicleDetailPage() {
           { label: 'Total Investment', value: `$${investment.toLocaleString()}`, raw: true },
           { label: 'Listed Price', value: `$${listed.toLocaleString()}`, raw: true },
           { label: 'Est. Profit', value: `${profit >= 0 ? '+' : ''}$${profit.toLocaleString()}`, profit: true },
+          { label: 'Fraud Risk', value: (() => {
+            const fraud = getFraudRisk(vehicle.titleBrands, vehicle.redFlags, vehicle.accidentCount);
+            return (
+              <div className="flex items-center gap-2">
+                {fraud.level === 'low' ? (
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" strokeWidth={1} />
+                ) : (
+                  <ShieldAlert className={`w-4 h-4 ${
+                    fraud.level === 'critical' ? 'text-rose-400' :
+                    fraud.level === 'high' ? 'text-orange-400' :
+                    'text-amber-400'
+                  }`} strokeWidth={1} />
+                )}
+                <span className={`text-lg font-bold ${
+                  fraud.level === 'low' ? 'text-emerald-400' :
+                  fraud.level === 'critical' ? 'text-rose-400' :
+                  fraud.level === 'high' ? 'text-orange-400' :
+                  'text-amber-400'
+                }`}>{fraud.score}</span>
+              </div>
+            );
+          })(), raw: true },
         ].map((card, i) => (
           <motion.div
             key={card.label}

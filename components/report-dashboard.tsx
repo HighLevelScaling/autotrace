@@ -12,6 +12,10 @@ import { TicketCard } from './ticket-card';
 import { TransferCard } from './transfer-card';
 import { AccidentCard } from './accident-card';
 import { ServiceCard } from './service-card';
+import { VelocitySection } from './velocity-section';
+import { OwnershipSection } from './ownership-section';
+import { FraudSection } from './fraud-section';
+import { BatterySection } from './battery-section';
 
 interface ReportDashboardProps {
   report: VehicleReport;
@@ -59,9 +63,23 @@ export function ReportDashboard({ report }: ReportDashboardProps) {
         </div>
       </motion.section>
 
-      {/* Valuation & Title Section */}
+      {/* Fraud Detection Section */}
       <motion.section
         custom={1}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={sectionVariants}
+      >
+        <Eyebrow>Fraud Detection</Eyebrow>
+        <div className="grid grid-cols-12 gap-4 sm:gap-5">
+          <FraudSection fraud={report.fraud} />
+        </div>
+      </motion.section>
+
+      {/* Valuation & Title Section */}
+      <motion.section
+        custom={2}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
@@ -74,9 +92,53 @@ export function ReportDashboard({ report }: ReportDashboardProps) {
         </div>
       </motion.section>
 
+      {/* Battery Health Section (EV only) */}
+      {report.battery && (
+        <motion.section
+          custom={3}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-80px' }}
+          variants={sectionVariants}
+        >
+          <Eyebrow>Battery Health</Eyebrow>
+          <div className="grid grid-cols-12 gap-4 sm:gap-5">
+            <BatterySection battery={report.battery} make={report.make} model={report.model} />
+          </div>
+        </motion.section>
+      )}
+
+      {/* Market Velocity Section */}
+      <motion.section
+        custom={4}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={sectionVariants}
+      >
+        <Eyebrow>Market Velocity</Eyebrow>
+        <div className="grid grid-cols-12 gap-4 sm:gap-5">
+          <VelocitySection velocity={report.velocity} marketValue={report.marketValue} />
+        </div>
+      </motion.section>
+
+      {/* Ownership Section */}
+      <motion.section
+        custom={5}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={sectionVariants}
+      >
+        <Eyebrow>Ownership &amp; Keys</Eyebrow>
+        <div className="grid grid-cols-12 gap-4 sm:gap-5">
+          <OwnershipSection report={report} />
+        </div>
+      </motion.section>
+
       {/* Records & Registration Section */}
       <motion.section
-        custom={2}
+        custom={6}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
@@ -91,7 +153,7 @@ export function ReportDashboard({ report }: ReportDashboardProps) {
 
       {/* History Section */}
       <motion.section
-        custom={3}
+        custom={7}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
@@ -107,7 +169,7 @@ export function ReportDashboard({ report }: ReportDashboardProps) {
 
       {/* Maintenance Section */}
       <motion.section
-        custom={4}
+        custom={8}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: '-80px' }}
